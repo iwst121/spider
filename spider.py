@@ -282,9 +282,5 @@ class Spider (object):
         self.threadPool.wait_completion()
         log.debug("Spidering complete")
         return results
-        
 
-if __name__ == '__main__':
-    s = Spider('http://www.google.com', threads=3, maxDepth=3)
-    results = s.spider()
 
