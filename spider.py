@@ -115,6 +115,9 @@ class Spider (object):
                             responseCallback(url, response)
         htmlCallback -- Called when html is parsed, 
                         htmlCallback(url, html)
+        shouldFollowLinkCallback -- Called before a link is followed, should
+                                    return a boolean which determines if a link
+                                    should be followed(url, link, linkElement)
     
     WARNING: When defining your callback functions, it is up to you to ensure
              that they are thread safe.  The Spider does not perform any sort
@@ -143,6 +146,7 @@ class Spider (object):
         self.responseCallback = None
         self.htmlCallback = None
         self.levelCallback = None
+        self.shouldFollowLinkCallback = None
 
         # create thread pool
         self.threadPool = ThreadPool.ThreadPool(self.threads)
@@ -236,10 +240,21 @@ class Spider (object):
                         not link in results.visited and
                         not link in results.graph[url]):
                         log.debug("Found link: %s" % link)
-                        results._urls.append(link)
-                        results.graph[url].append(link)
+
+                        # inform that a link has been found
                         if not self.linkCallback is None:
                             self.linkCallback(url, link, element)
+
+                        # check if allowed to follow the link
+                        if not self.shouldFollowLinkCallback is None:
+                            follow = self.shouldFollowLinkCallback(url, link, element)
+                        else:
+                            follow = True
+
+                        # follow the link if possible
+                        if follow: results._urls.append(link)
+                        # note in the graph that the link exists
+                        results.graph[url].append(link)                        
                 finally:
                     self.graphLock.release()
 
